@@ -212,7 +212,7 @@ vc4_generate_code(struct vc4_context *vc4, struct vc4_compile *c)
                 break;
         }
 
-        list_for_each_entry(struct qinst, qinst, &c->instructions, link) {
+        qir_for_each_inst_inorder(c, qinst) {
 #if 0
                 fprintf(stderr, "translating qinst to qpu: ");
                 qir_dump_inst(qinst);

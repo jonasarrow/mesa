@@ -38,6 +38,7 @@ bool
 qir_opt_copy_propagation(struct vc4_compile *c)
 {
         bool progress = false;
+#if 0 /* XXX */
         bool debug = false;
 
         list_for_each_entry(struct qinst, inst, &c->instructions, link) {
@@ -114,5 +115,6 @@ qir_opt_copy_propagation(struct vc4_compile *c)
                         progress = true;
                 }
         }
+        #endif
         return progress;
 }

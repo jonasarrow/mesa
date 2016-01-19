@@ -317,9 +317,12 @@ qir_dump_inst(struct vc4_compile *c, struct qinst *inst)
 void
 qir_dump(struct vc4_compile *c)
 {
-        list_for_each_entry(struct qinst, inst, &c->instructions, link) {
-                qir_dump_inst(c, inst);
-                fprintf(stderr, "\n");
+        qir_for_each_block(c, block) {
+                fprintf(stderr, "BLOCK %d:\n", block->index);
+                qir_for_each_inst(block, inst) {
+                        qir_dump_inst(c, inst);
+                        fprintf(stderr, "\n");
+                }
         }
 }
 
@@ -417,7 +420,7 @@ qir_compile_init(void)
         struct vc4_compile *c = rzalloc(NULL, struct vc4_compile);
 
         list_inithead(&c->blocks);
-        list_inithead(&c->instructions);
+        c->cur_block = qir_new_block(c);
 
         c->output_position_index = -1;
         c->output_color_index = -1;
@@ -463,10 +466,12 @@ qir_follow_movs(struct vc4_compile *c, struct qreg reg)
 void
 qir_compile_destroy(struct vc4_compile *c)
 {
-        while (!list_empty(&c->instructions)) {
-                struct qinst *qinst =
-                        (struct qinst *)c->instructions.next;
-                qir_remove_instruction(c, qinst);
+        qir_for_each_block(c, block) {
+                while (!list_empty(&block->instructions)) {
+                        struct qinst *qinst =
+                                (struct qinst *)block->instructions.next;
+                        qir_remove_instruction(c, qinst);
+                }
         }
 
         ralloc_free(c);
@@ -520,8 +525,9 @@ void
 qir_SF(struct vc4_compile *c, struct qreg src)
 {
         struct qinst *last_inst = NULL;
-        if (!list_empty(&c->instructions))
-                last_inst = (struct qinst *)c->instructions.prev;
+
+        if (!list_empty(&c->cur_block->instructions))
+                last_inst = (struct qinst *)c->cur_block->instructions.prev;
 
         /* We don't have any way to guess which kind of MOV is implied. */
         assert(!src.pack);
@@ -530,7 +536,7 @@ qir_SF(struct vc4_compile *c, struct qreg src)
             !c->defs[src.index] ||
             last_inst != c->defs[src.index]) {
                 last_inst = qir_MOV_dest(c, qir_reg(QFILE_NULL, 0), src);
-                last_inst = (struct qinst *)c->instructions.prev;
+                last_inst = (struct qinst *)c->cur_block->instructions.prev;
         }
         last_inst->sf = true;
 }

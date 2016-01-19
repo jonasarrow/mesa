@@ -31,13 +31,13 @@
 #include "vc4_qir.h"
 #include "vc4_qpu.h"
 
-static bool debug;
+//static bool debug;
 
 bool
 qir_opt_small_immediates(struct vc4_compile *c)
 {
         bool progress = false;
-
+#if 0 /* XXX */
         list_for_each_entry(struct qinst, inst, &c->instructions, link) {
                 /* The small immediate value sits in the raddr B field, so we
                  * can't have 2 small immediates in one instruction (unless
@@ -95,5 +95,6 @@ qir_opt_small_immediates(struct vc4_compile *c)
                 }
         }
 
+#endif
         return progress;
 }

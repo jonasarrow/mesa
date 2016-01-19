@@ -39,6 +39,7 @@
 #include "util/hash_table.h"
 #include "util/ralloc.h"
 
+#if 0
 static bool debug;
 
 struct inst_key {
@@ -113,11 +114,12 @@ vc4_find_cse(struct vc4_compile *c, struct hash_table *ht,
 
         return NULL;
 }
-
+#endif
 bool
 qir_opt_cse(struct vc4_compile *c)
 {
         bool progress = false;
+        #if 0        /* XXX */
         uint32_t sf_count = 0;
 
         struct hash_table *ht = _mesa_hash_table_create(NULL, NULL,
@@ -155,5 +157,6 @@ qir_opt_cse(struct vc4_compile *c)
 
         ralloc_free(ht);
 
+#endif
         return progress;
 }

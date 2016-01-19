@@ -441,10 +441,10 @@ struct vc4_compile {
         struct qreg undef;
         enum qstage stage;
         uint32_t num_temps;
+
         struct list_head blocks;
         int next_block_index;
-
-        struct list_head instructions;
+        struct qblock *cur_block;
 
         struct list_head qpu_inst_list;
         uint64_t *qpu_insts;
@@ -489,7 +489,7 @@ void qir_emit(struct vc4_compile *c, struct qinst *inst);
 static inline struct qinst *
 qir_emit_nodef(struct vc4_compile *c, struct qinst *inst)
 {
-        list_addtail(&inst->link, &c->instructions);
+        list_addtail(&inst->link, &c->cur_block->instructions);
         return inst;
 }
 
@@ -749,5 +749,12 @@ qir_VPM_WRITE(struct vc4_compile *c, struct qreg val)
 
 #define qir_for_each_inst(block, inst)                                  \
         list_for_each_entry(struct qinst, inst, &block->instructions, link)
+
+#define qir_for_each_inst_safe(block, inst) \
+        list_for_each_entry_safe(struct qinst, inst, &block->instructions, link)
+
+#define qir_for_each_inst_inorder(c, inst)      \
+        qir_for_each_block(c, _block) \
+	        qir_for_each_inst(_block, inst)
 
 #endif /* VC4_QIR_H */

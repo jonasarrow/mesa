@@ -39,6 +39,7 @@ qir_opt_vpm(struct vc4_compile *c)
                 return false;
 
         bool progress = false;
+        #if 0
         struct qinst *vpm_writes[64] = { 0 };
         uint32_t use_count[c->num_temps];
         uint32_t vpm_write_count = 0;
@@ -157,6 +158,6 @@ qir_opt_vpm(struct vc4_compile *c)
 
                 progress = true;
         }
-
+#endif /* XXX */
         return progress;
 }

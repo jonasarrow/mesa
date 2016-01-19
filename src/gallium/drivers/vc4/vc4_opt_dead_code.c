@@ -33,6 +33,7 @@
 
 #include "vc4_qir.h"
 
+#if 0
 static bool debug;
 
 static void
@@ -76,11 +77,12 @@ has_nonremovable_reads(struct vc4_compile *c, struct qinst *inst)
 
         return false;
 }
-
+#endif /* XXX */
 bool
 qir_opt_dead_code(struct vc4_compile *c)
 {
         bool progress = false;
+#if 0 /* XXX */
         bool *used = calloc(c->num_temps, sizeof(bool));
         bool sf_used = false;
         /* Whether we're eliminating texture setup currently. */
@@ -152,6 +154,6 @@ qir_opt_dead_code(struct vc4_compile *c)
         }
 
         free(used);
-
+#endif
         return progress;
 }

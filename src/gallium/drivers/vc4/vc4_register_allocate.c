@@ -190,13 +190,8 @@ vc4_register_allocate(struct vc4_context *vc4, struct vc4_compile *c)
         struct ra_graph *g = ra_alloc_interference_graph(vc4->regs,
                                                          c->num_temps);
 
-        /* Compute the live ranges so we can figure out interference.  Done
-         * using a temporary block since we haven't switched over quite yet.
-         */
-        struct qblock *block = qir_new_block(c);
-        list_replace(&c->instructions, &block->instructions);
+        /* Compute the live ranges so we can figure out interference. */
         qir_calculate_live_intervals(c);
-        list_replace(&block->instructions, &c->instructions);
 
         for (uint32_t i = 0; i < c->num_temps; i++) {
                 map[i].temp = i;
@@ -216,7 +211,7 @@ vc4_register_allocate(struct vc4_context *vc4, struct vc4_compile *c)
                sizeof(class_bits));
 
         int ip = 0;
-        list_for_each_entry(struct qinst, inst, &c->instructions, link) {
+        qir_for_each_inst_inorder(c, inst) {
                 if (qir_writes_r4(inst)) {
                         /* This instruction writes r4 (and optionally moves
                          * its result to a temp), so nothing else can be

@@ -99,9 +99,11 @@ qir_opt_constant_folding(struct vc4_compile *c)
 {
         bool progress = false;
 
-        list_for_each_entry(struct qinst, inst, &c->instructions, link) {
-                if (constant_fold(c, inst))
-                        progress = true;
+        qir_for_each_block(c, block) {
+                qir_for_each_inst(block, inst) {
+                        if (constant_fold(c, inst))
+                                progress = true;
+                }
         }
 
         return progress;
