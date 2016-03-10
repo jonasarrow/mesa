@@ -322,7 +322,7 @@ vc4_screen_get_shader_param(struct pipe_screen *pscreen, unsigned shader,
         case PIPE_SHADER_CAP_MAX_TEX_INDIRECTIONS:
                 return 16384;
         case PIPE_SHADER_CAP_MAX_CONTROL_FLOW_DEPTH:
-                return 0;
+                return UINT_MAX;
         case PIPE_SHADER_CAP_MAX_INPUTS:
                 if (shader == PIPE_SHADER_FRAGMENT)
                         return 8;
