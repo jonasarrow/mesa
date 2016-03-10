@@ -344,6 +344,14 @@ struct qblock {
         struct qblock *successors[2];
 
         int index;
+
+        /** @{ used by vc4_qir_live_variables.c */
+        BITSET_WORD *def;
+        BITSET_WORD *use;
+        BITSET_WORD *live_in;
+        BITSET_WORD *live_out;
+        int start_ip, end_ip;
+        /** @} */
 };
 
 struct vc4_compile {
@@ -416,6 +424,9 @@ struct vc4_compile {
         struct vc4_fs_key *fs_key;
         struct vc4_vs_key *vs_key;
 
+        /* Live ranges of temps. */
+        int *temp_start, *temp_end;
+
         uint32_t *uniform_data;
         enum quniform_contents *uniform_contents;
         uint32_t uniform_array_size;
@@ -483,6 +494,7 @@ qir_emit_nodef(struct vc4_compile *c, struct qinst *inst)
 }
 
 struct qreg qir_get_temp(struct vc4_compile *c);
+void qir_calculate_live_intervals(struct vc4_compile *c);
 int qir_get_op_nsrc(enum qop qop);
 bool qir_reg_equals(struct qreg a, struct qreg b);
 bool qir_has_side_effects(struct vc4_compile *c, struct qinst *inst);
@@ -721,5 +733,21 @@ qir_VPM_WRITE(struct vc4_compile *c, struct qreg val)
 {
         qir_MOV_dest(c, qir_reg(QFILE_VPM, 0), val);
 }
+
+#define qir_for_each_block(c, block) \
+        list_for_each_entry(struct qblock, block, &c->blocks, link)
+
+#define qir_for_each_block_rev(c, block) \
+        list_for_each_entry_rev(struct qblock, block, &c->blocks, link)
+
+#define qir_for_each_successor(block, succ) \
+        for (struct qblock *succ = ((block->successors[0] != NULL) ?   \
+                                     block->successors[0] :             \
+                                     block->successors[1]);             \
+             succ != NULL;                                             \
+             succ = block->successors[1])
+
+#define qir_for_each_inst(block, inst)                                  \
+        list_for_each_entry(struct qinst, inst, &block->instructions, link)
 
 #endif /* VC4_QIR_H */
