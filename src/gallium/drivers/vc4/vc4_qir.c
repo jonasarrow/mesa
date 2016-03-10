@@ -394,11 +394,29 @@ qir_reg_equals(struct qreg a, struct qreg b)
         return a.file == b.file && a.index == b.index;
 }
 
+struct qblock *
+qir_new_block(struct vc4_compile *c)
+{
+        struct qblock *block = rzalloc(c, struct qblock);
+
+        list_inithead(&block->instructions);
+        list_addtail(&block->link, &c->blocks);
+
+        block->predecessors = _mesa_set_create(block,
+                                               _mesa_hash_pointer,
+                                               _mesa_key_pointer_equal);
+
+        block->index = c->next_block_index++;
+
+        return block;
+}
+
 struct vc4_compile *
 qir_compile_init(void)
 {
         struct vc4_compile *c = rzalloc(NULL, struct vc4_compile);
 
+        list_inithead(&c->blocks);
         list_inithead(&c->instructions);
 
         c->output_position_index = -1;

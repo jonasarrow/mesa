@@ -334,6 +334,18 @@ struct vc4_vs_key {
         bool per_vertex_point_size;
 };
 
+/** A basic block of QIR intructions. */
+struct qblock {
+        struct list_head link;
+
+        struct list_head instructions;
+
+        struct set *predecessors;
+        struct qblock *successors[2];
+
+        int index;
+};
+
 struct vc4_compile {
         struct vc4_context *vc4;
         nir_shader *s;
@@ -418,6 +430,9 @@ struct vc4_compile {
         struct qreg undef;
         enum qstage stage;
         uint32_t num_temps;
+        struct list_head blocks;
+        int next_block_index;
+
         struct list_head instructions;
 
         struct list_head qpu_inst_list;
@@ -444,6 +459,7 @@ struct vc4_compile {
 
 struct vc4_compile *qir_compile_init(void);
 void qir_compile_destroy(struct vc4_compile *c);
+struct qblock *qir_new_block(struct vc4_compile *c);
 struct qinst *qir_inst(enum qop op, struct qreg dst,
                        struct qreg src0, struct qreg src1);
 struct qinst *qir_inst4(enum qop op, struct qreg dst,
