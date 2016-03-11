@@ -43,6 +43,8 @@
 
 static struct qreg
 ntq_get_src(struct vc4_compile *c, nir_src src, int i);
+static void
+ntq_emit_cf_list(struct vc4_compile *c, struct exec_list *list);
 
 static void
 resize_qreg_array(struct vc4_compile *c,
@@ -1653,10 +1655,63 @@ ntq_emit_intrinsic(struct vc4_compile *c, nir_intrinsic_instr *instr)
         }
 }
 
+/* Clears (activates) the execute flags for any channels whose jump target
+ * matches this block.
+ */
+static void
+ntq_activate_execute_for_block(struct vc4_compile *c, struct qblock *block)
+{
+        qir_SF(c, qir_SUB(c, c->execute, qir_uniform_ui(c, block->index)));
+        qir_MOV_cond(c, QPU_COND_ZS, c->execute, qir_uniform_ui(c, 0));
+}
+
 static void
 ntq_emit_if(struct vc4_compile *c, nir_if *if_stmt)
 {
-        fprintf(stderr, "general IF statements not handled.\n");
+        struct qblock *then_block = qir_new_block(c);
+        struct qblock *else_block = qir_new_block(c);
+        struct qblock *after_block = qir_new_block(c);
+
+        if (c->execute.file == QFILE_NULL)
+                c->execute = qir_MOV(c, qir_uniform_ui(c, 0));
+
+        /* Set ZS for executing (execute == 0) and jumping (if->condition ==
+         * 0) channels, and then update execute flags for those to point to
+         * the ELSE block.
+         */
+        qir_SF(c, qir_AND(c,
+                          c->execute,
+                          ntq_get_src(c, if_stmt->condition, 0)));
+        qir_MOV_cond(c, QPU_COND_ZS, c->execute,
+                     qir_uniform_ui(c, else_block->index));
+
+        /* Jump to ELSE if nothing is active for THEN, otherwise fall
+         * through.
+         */
+        qir_SF(c, c->execute);
+        qir_BRANCH(c, QPU_COND_BRANCH_ALL_ZC);
+
+        /* Process the THEN block. */
+        c->cur_block = then_block;
+        ntq_emit_cf_list(c, &if_stmt->then_list);
+
+        /* Handle the end of the THEN block.  First, all currently active
+         * channels update their execute flags to point to ENDIF
+         */
+        qir_SF(c, c->execute);
+        qir_MOV_cond(c, QPU_COND_ZS, c->execute,
+                     qir_uniform_ui(c, after_block->index));
+
+        /* If everything points at ENDIF, then jump there immediately. */
+        qir_SF(c, qir_SUB(c, c->execute, qir_uniform_ui(c, after_block->index)));
+        qir_BRANCH(c, QPU_COND_BRANCH_ALL_ZS);
+
+        c->cur_block = else_block;
+        ntq_activate_execute_for_block(c, else_block);
+        ntq_emit_cf_list(c, &if_stmt->else_list);
+
+        c->cur_block = after_block;
+        ntq_activate_execute_for_block(c, after_block);
 }
 
 static void

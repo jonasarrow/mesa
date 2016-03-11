@@ -400,6 +400,12 @@ struct vc4_compile {
         uint32_t next_ubo_dst_offset;
 
         struct qreg line_x, point_x, point_y;
+
+        /* State for whether we're executing on each channel currently.  0 if
+         * yes, otherwise a block number + 1.
+         */
+        struct qreg execute;
+
         struct qreg discard;
 
         uint8_t vattr_sizes[8];
@@ -740,6 +746,22 @@ static inline void
 qir_VPM_WRITE(struct vc4_compile *c, struct qreg val)
 {
         qir_MOV_dest(c, qir_reg(QFILE_VPM, 0), val);
+}
+
+static inline void
+qir_MOV_cond(struct vc4_compile *c, uint8_t cond,
+             struct qreg dest, struct qreg src)
+{
+        qir_MOV_dest(c, dest, src)->cond = cond;
+}
+
+static inline struct qinst *
+qir_BRANCH(struct vc4_compile *c, uint8_t cond)
+{
+        struct qinst *inst = qir_inst(QOP_BRANCH, c->undef, c->undef, c->undef);
+        inst->cond = cond;
+        qir_emit(c, inst);
+        return inst;
 }
 
 #define qir_for_each_block(c, block) \
