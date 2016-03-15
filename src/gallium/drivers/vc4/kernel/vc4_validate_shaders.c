@@ -394,6 +394,38 @@ check_instruction_writes(uint64_t inst,
 }
 
 static bool
+check_branch(uint64_t inst,
+	     struct vc4_validated_shader_info *validated_shader,
+	     struct vc4_shader_validation_state *validation_state)
+{
+	uint32_t branch_target = inst;
+
+	if (branch_target % 4) {
+		DRM_ERROR("branch target not aligned\n");
+		return false;
+	};
+
+	if (inst & QPU_BRANCH_REG) {
+		DRM_ERROR("branching from register relative not supported\n");
+		return false;
+	}
+
+	if (inst & QPU_BRANCH_REL) {
+		DRM_ERROR("relative branching not supported\n");
+		return false;
+	}
+
+	/* XXX: Verify that branch is within the program. */
+	/* XXX: Mark branch target's state as unknown (for direct addressing,
+	 * etc.)
+	 */
+	/* XXX: Mark uniform setup as unknown */
+	/* XXX: Update branch target address*/
+
+	return true;
+}
+
+static bool
 check_instruction_reads(uint64_t inst,
 			struct vc4_validated_shader_info *validated_shader)
 {
@@ -475,6 +507,11 @@ vc4_validate_shader(struct drm_gem_cma_object *shader_obj)
 			}
 			break;
 
+		case QPU_SIG_BRANCH:
+			if (!check_branch(inst, validated_shader,
+					  &validation_state))
+				goto fail;
+			break;
 		default:
 			DRM_ERROR("Unsupported QPU signal %d at "
 				  "instruction %d\n", sig, ip);
