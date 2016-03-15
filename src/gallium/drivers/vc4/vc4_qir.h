@@ -147,6 +147,12 @@ enum qop {
          * the destination
          */
         QOP_TEX_RESULT,
+
+        /* Jumps to block->successor[0] if the qinst->cond (as a
+         * QPU_COND_BRANCH_*) passes, or block->successor[1] if not.  Note
+         * that block->successor[1] may be unset if the condition is ALWAYS.
+         */
+        QOP_BRANCH,
 };
 
 struct queued_qpu_inst {

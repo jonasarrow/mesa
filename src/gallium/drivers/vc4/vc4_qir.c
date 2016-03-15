@@ -81,6 +81,8 @@ static const struct qir_op_info qir_op_info[] = {
         [QOP_TEX_B] = { "tex_b", 0, 2 },
         [QOP_TEX_DIRECT] = { "tex_direct", 0, 2 },
         [QOP_TEX_RESULT] = { "tex_result", 1, 0, true },
+
+        [QOP_BRANCH] = { "branch", 0, 0, true },
 };
 
 static const char *
@@ -284,7 +286,10 @@ void
 qir_dump_inst(struct vc4_compile *c, struct qinst *inst)
 {
         fprintf(stderr, "%s", qir_get_op_name(inst->op));
-        vc4_qpu_disasm_cond(stderr, inst->cond);
+        if (inst->op == QOP_BRANCH)
+                vc4_qpu_disasm_cond_branch(stderr, inst->cond);
+        else
+                vc4_qpu_disasm_cond(stderr, inst->cond);
         if (inst->sf)
                 fprintf(stderr, ".sf");
         fprintf(stderr, " ");
