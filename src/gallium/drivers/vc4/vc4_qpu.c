@@ -165,6 +165,20 @@ qpu_load_imm_ui(struct qpu_reg dst, uint32_t val)
 }
 
 uint64_t
+qpu_branch(uint32_t cond, uint32_t target)
+{
+        uint64_t inst = 0;
+
+        inst |= qpu_a_dst(qpu_ra(QPU_W_NOP));
+        inst |= qpu_m_dst(qpu_rb(QPU_W_NOP));
+        inst |= QPU_SET_FIELD(cond, QPU_BRANCH_COND);
+        inst |= QPU_SET_FIELD(QPU_SIG_BRANCH, QPU_SIG);
+        inst |= target;
+
+        return inst;
+}
+
+uint64_t
 qpu_a_alu2(enum qpu_op_add op,
            struct qpu_reg dst, struct qpu_reg src0, struct qpu_reg src1)
 {
