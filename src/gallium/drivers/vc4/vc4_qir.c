@@ -399,6 +399,7 @@ qir_new_block(struct vc4_compile *c)
         struct qblock *block = rzalloc(c, struct qblock);
 
         list_inithead(&block->instructions);
+        list_inithead(&block->qpu_inst_list);
         list_addtail(&block->link, &c->blocks);
 
         block->predecessors = _mesa_set_create(block,

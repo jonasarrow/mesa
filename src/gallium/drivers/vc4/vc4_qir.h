@@ -345,6 +345,7 @@ struct qblock {
         struct list_head link;
 
         struct list_head instructions;
+        struct list_head qpu_inst_list;
 
         struct set *predecessors;
         struct qblock *successors[2];
@@ -453,6 +454,7 @@ struct vc4_compile {
         struct qblock *cur_block;
 
         struct list_head qpu_inst_list;
+
         uint64_t *qpu_insts;
         uint32_t qpu_inst_count;
         uint32_t qpu_inst_size;
