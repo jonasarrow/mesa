@@ -481,9 +481,11 @@ ntq_ffract(struct vc4_compile *c, struct qreg src)
         struct qreg trunc = qir_ITOF(c, qir_FTOI(c, src));
         struct qreg diff = qir_FSUB(c, src, trunc);
         qir_SF(c, diff);
-        return qir_SEL_X_Y_NS(c,
-                              qir_FADD(c, diff, qir_uniform_f(c, 1.0)),
-                              diff);
+        struct qreg fract = qir_SEL(c, QPU_COND_NS,
+                       qir_FADD(c, diff, qir_uniform_f(c, 1.0)), diff);
+        /* If |src|>2^(24), ffract is 0 (precision)*/
+        qir_SF(c, qir_FSUB(c, qir_FMAXABS(c, src, src), qir_uniform_f(c, 16777216)));
+        return qir_SEL(c, QPU_COND_NS, fract, qir_uniform_f(c, 0.0f));
 }
 
 /**
@@ -500,9 +502,11 @@ ntq_ffloor(struct vc4_compile *c, struct qreg src)
          */
         qir_SF(c, qir_FSUB(c, src, trunc));
 
-        return qir_SEL_X_Y_NS(c,
-                              qir_FSUB(c, trunc, qir_uniform_f(c, 1.0)),
-                              trunc);
+        struct qreg floor = qir_SEL(c, QPU_COND_NS,
+                       qir_FSUB(c, trunc, qir_uniform_f(c, 1.0)), trunc);
+        /* If |src|>INT_MAX, this fails and the floor should be src*/
+        qir_SF(c, qir_FSUB(c, qir_FMAXABS(c, src, src), qir_uniform_f(c, 16777216)));
+        return qir_SEL(c, QPU_COND_NS, floor, src);
 }
 
 /**
@@ -519,9 +523,11 @@ ntq_fceil(struct vc4_compile *c, struct qreg src)
          */
         qir_SF(c, qir_FSUB(c, trunc, src));
 
-        return qir_SEL_X_Y_NS(c,
-                              qir_FADD(c, trunc, qir_uniform_f(c, 1.0)),
-                              trunc);
+        struct qreg ceil = qir_SEL(c, QPU_COND_NS,
+               qir_FADD(c, trunc, qir_uniform_f(c, 1.0)), trunc);
+        /* If |src|>INT_MAX, this fails and the ceil should be src*/
+        qir_SF(c, qir_FSUB(c, qir_FMAXABS(c, src, src), qir_uniform_f(c, 16777216)));
+        return qir_SEL(c, QPU_COND_NS, ceil, src);
 }
 
 static struct qreg
